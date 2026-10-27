@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1018">
+  <title>Image Compressor & Converter</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">◇</span><div>Image Compressor<br><b>&amp; Converter</b></div></div>
+    <nav aria-label="Main navigation">
+      <button class="nav active" data-page="compress">▧ <span>Compress<small>Reduce image size</small></span></button>
+      <button class="nav" data-page="convert">⇄ <span>Convert<small>Convert image formats</small></span></button>
+      <button class="nav" data-page="batch">▤ <span>Batch Compress<small>Process multiple images</small></span></button>
+      <button class="nav" data-page="modern">◈ <span>WebP / AVIF<small>Modern formats</small></span></button>
+      <button class="nav" data-page="resize">⤢ <span>Resize<small>Change dimensions</small></span></button>
+      <button class="nav" data-page="tools">⬡ <span>Tools<small>Compression &amp; recovery</small></span></button>
+      <button class="nav" data-page="dashboard">▥ <span>Results Dashboard<small>Quality &amp; loss curve</small></span></button>
+    </nav>
+    <div class="privacy"><span>⚡</span><div><b>100% Private</b><small>Your images stay in your browser.</small></div></div>
+    <div class="side-bottom"><button id="themeButton" class="small-button" title="Toggle theme">☾</button><select id="language" aria-label="Language"><option>English</option></select></div>
+  </aside>
+
+  <main class="main">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">SMART IMAGE TOOLS</div>
+        <h1>Compress Images,<br><span>Without</span> Losing Quality</h1>
+        <p>Reduce image size, convert formats, resize images and restore originals from reversible archives.</p>
+        <div class="features">
+          <div>♧ <b>100% Private</b><small>All in browser</small></div>
+          <div>⚡ <b>Fast &amp; Secure</b><small>No server upload</small></div>
+          <div>✓ <b>Quality Control</b><small>Choose your output</small></div>
+        </div>
+      </div>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <span class="cloud">⇧</span><strong>Drop your images here</strong><span>or click to browse</span>
+        <small>Supports JPG, PNG, WebP, GIF, AVIF, SVG</small><small>Maximum 50 MB per image</small>
+      </label>
+    </header>
+
+    <div class="notice" id="notice" role="status" aria-live="polite">Choose images to begin. Processing happens locally in your browser.</div>
+
+    <section class="workspace">
+      <div class="panel settings">
+        <h3>⚙ Compression Settings</h3>
+        <label class="field-label">Output Format</label>
+        <div class="format-options" id="formatOptions">
+          <button type="button" data-format="original" class="format active">Original</button>
+          <button type="button" data-format="image/jpeg" class="format">JPG</button>
+          <button type="button" data-format="image/png" class="format">PNG</button>
+          <button type="button" data-format="image/webp" class="format">WebP</button>
+          <button type="button" data-format="image/avif" class="format">AVIF</button>
+        </div>
+        <div class="label-line"><label for="quality">Quality</label><b id="qualityValue">80%</b></div>
+        <input id="quality" type="range" min="10" max="100" value="80">
+        <div class="range-ends"><span>Smaller Size</span><span>Best Quality</span></div>
+        <div class="toggle-line"><label for="resizeEnabled">Resize (Optional)</label><input type="checkbox" id="resizeEnabled"></div>
+        <div class="dimensions">
+          <label>Max Width<input type="number" id="maxWidth" value="1920" min="1" max="20000"></label>
+          <span>↔</span>
+          <label>Max Height<input type="number" id="maxHeight" value="1080" min="1" max="20000"></label>
+        </div>
+        <details class="advanced">
+          <summary>Advanced Options</summary>
+          <label class="check-row"><input type="checkbox" id="lossless"> Use PNG output (lossless pixel encoding)</label>
+          <p class="hint">JPG, WebP and AVIF may discard image information. PNG can be larger than the original.</p>
+        </details>
+        <button id="compressButton" class="primary">⚡ Compress Now</button>
+        <button id="reversibleButton" class="secondary">🔒 Create Reversible ZIP</button>
+        <button id="decompressButton" class="secondary">📦 Restore Images from ZIP</button>
+        <input type="file" id="zipInput" accept=".zip,application/zip" hidden>
+        <p class="hint">Reversible ZIP stores original files unchanged. It does not reverse lossy compression performed elsewhere.</p>
+      </div>
+
+      <div class="panel preview-panel">
+        <div class="panel-heading"><h3>◉ Preview</h3><label class="toggle-label">Compare <input type="checkbox" id="compareToggle" checked></label></div>
+        <div class="compare" id="compare">
+          <img id="originalImage" alt="Original image preview" hidden>
+          <div class="after-image" id="afterImage"><img id="compressedImage" alt="Processed image preview"></div>
+          <div class="compare-line" id="compareLine"><span>↔</span></div>
+          <input type="range" id="compareRange" min="0" max="100" value="50" aria-label="Compare original and processed image">
+          <span class="image-tag original-tag">Original</span><span class="image-tag compressed-tag">Processed</span>
+          <div class="empty-preview" id="emptyPreview">Your image preview will appear here</div>
+        </div>
+        <div class="image-info">
+          <div><b id="originalName">Original image</b><small id="originalInfo">No image selected</small></div>
+          <div><b id="processedName">Processed image</b><small id="processedInfo">Waiting for processing</small></div>
+        </div>
+        <div class="result-stats">
+          <div><small>Original Size</small><strong id="statOriginal">—</strong></div>
+          <div><small>Output Size</small><strong id="statOutput">—</strong></div>
+          <div><small>Space Saved</small><strong id="statSaved">—</strong></div>
+        </div>
+        <div class="actions"><button id="downloadButton" class="secondary" disabled>↓ Download</button><button id="downloadAllButton" class="primary" disabled>⇩ Download All</button></div>
+      </div>
+    </section>
+
+    <section class="panel file-panel">
+      <div class="panel-heading"><h3>▤ Your Images</h3><button id="clearButton" class="text-button">Clear All</button></div>
+      <div id="fileList" class="file-list"><p class="hint">Uploaded and processed images will appear here.</p></div>
+    </section>
+
+    <section class="panel dashboard" id="dashboardSection">
+      <div class="panel-heading"><h2>📊 Results Dashboard</h2><span class="badge">LIVE RESULTS</span></div>
+      <div class="dashboard-grid">
+        <div>
+          <h3>Image Quality Metrics</h3>
+          <div class="metrics">
+            <div><small>PSNR (sample estimate)</small><strong id="psnr">—</strong></div>
+            <div><small>SSIM-like estimate</small><strong id="ssim">—</strong></div>
+            <div><small>Size Reduction</small><strong id="reduction">—</strong></div>
+            <div><small>Dimensions</small><strong id="dimensionsResult">—</strong></div>
+          </div>
+          <h3>Compression History</h3>
+          <div class="table-wrap"><table><thead><tr><th>Image</th><th>Original</th><th>Output</th><th>Saved</th></tr></thead><tbody id="historyTable"><tr><td colspan="4">No results yet</td></tr></tbody></table></div>
+          <p class="hint">Quality values are sampled browser estimates, not official benchmark results or AI model metrics.</p>
+        </div>
+        <div>
+          <h3>Illustrative Quality Curve</h3><canvas id="lossChart" width="600" height="360" aria-label="Illustrative compression quality curve"></canvas>
+          <div class="label-line"><label for="chartRate">Select compression quality</label><b id="chartRateValue">80%</b></div>
+          <input id="chartRate" type="range" min="10" max="100" value="80">
+          <div class="range-ends"><span>10% · Smaller</span><span>100% · Higher quality</span></div>
+          <button id="applyChartRate" class="secondary">Apply Quality Setting</button>
+          <label class="field-label" for="imageSelector">Select image</label><select id="imageSelector" class="select-control"><option value="">No images uploaded</option></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel formats-panel"><h3>We Support Major Formats</h3>
+      <div class="format-cards">
+        <div><b class="jpg">JPG</b><span>Photographs<small>Lossy format</small></span></div>
+        <div><b class="png">PNG</b><span>Graphics<small>Lossless format</small></span></div>
+        <div><b class="webp">WebP</b><span>Modern images<small>Web optimized</small></span></div>
+        <div><b class="avif">AVIF</b><span>Next-gen images<small>Browser dependent</small></span></div>
+        <div><b class="gif">GIF</b><span>Animated images<small>Use ZIP to preserve</small></span></div>
+        <div><b class="svg">SVG</b><span>Vector graphics<small>Use ZIP to preserve</small></span></div>
+      </div>
+    </section>
+    <footer>Image Compressor &amp; Converter · Private browser-side processing</footer>
+  </main>
+</body>
+</html>
